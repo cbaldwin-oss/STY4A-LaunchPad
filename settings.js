@@ -88,15 +88,15 @@ async addOption() {
             payload[this.currentCategory] = val;
 
             // THE FIX 1: Updated the table name to match your Supabase schema
-            const { error } = await _supabase.from('PHXA7dropdownoptions').insert([payload]);
+            const { error } = await _supabase.from('STY4dropdownoptions').insert([payload]);
 
             if (error) throw error;
 
             input.value = "";
             
             // THE FIX 2: Call the correct fetch function from your index.html
-            if (typeof fetchPHXA7dropdownoptions === 'function') {
-                await fetchPHXA7dropdownoptions(); 
+            if (typeof fetchSTY4dropdownoptions === 'function') {
+                await fetchSTY4dropdownoptions(); 
             }
             
             if (typeof refreshDropdowns === 'function') refreshDropdowns(); 
@@ -120,14 +120,14 @@ async addOption() {
             update[this.currentCategory] = null;
 
             const { error } = await _supabase
-                .from('PHXA7dropdownoptions') // Updated table name
+                .from('STY4dropdownoptions') // Updated table name
                 .update(update)
                 .eq(this.currentCategory, val);
 
             if (error) throw error;
 
-            if (typeof fetchPHXA7dropdownoptions === 'function') {
-                await fetchPHXA7dropdownoptions(); // Updated function name
+            if (typeof fetchSTY4dropdownoptions === 'function') {
+                await fetchSTY4dropdownoptions(); // Updated function name
             }
             
             if (typeof refreshDropdowns === 'function') refreshDropdowns();
@@ -145,7 +145,7 @@ async addOption() {
         
         try {
             const { error } = await _supabase
-                .from('PHXA7dropdownoptions') // Updated table name
+                .from('STY4dropdownoptions') // Updated table name
                 .delete()
                 .is('Times', null).is('Places', null).is('Activities', null)
                 .is('Assets', null).is('Trade_Partners', null).is('Results', null);

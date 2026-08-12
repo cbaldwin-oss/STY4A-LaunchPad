@@ -716,7 +716,7 @@ async function initApp() {
     // Update the Realtime listener (around line 433)
     _supabase
     .channel('schema-db-changes')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'STY2Assets' }, (payload) => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'STY4Assets' }, (payload) => {
         if (isEditMode || isPreviewMode) return;
 
         if (payload.eventType === 'INSERT') {
@@ -804,7 +804,7 @@ async function findDuplicates() {
 async function loadBrokenAssets() {
     const select = document.getElementById('brokenAssetSelect');
     const { data, error } = await _supabase
-        .from('STY2Assets')
+        .from('STY4Assets')
         .select('asset_name')
         .ilike('status', '%broken%'); // Matches 'Broken' case-insensitive
 
@@ -824,7 +824,7 @@ async function loadBrokenSealsForAsset(assetName) {
     const list = document.getElementById('sealCheckboxList');
     
     const { data, error } = await _supabase
-        .from('STY2Assets')
+        .from('STY4Assets')
         .select('id, seal_number, location, sub_area')
         .eq('asset_name', assetName)
         .ilike('status', '%broken%');
@@ -881,8 +881,8 @@ function generateReinspectionPreview() {
 }
 
 async function fetchLookupData() {
-    // Replace 'STY2AssetRegistry' with your actual reference table name
-    const { data, error } = await _supabase.from('STY2AssetRegistry').select('asset_name, location');
+    // Replace 'STY4AssetRegistry' with your actual reference table name
+    const { data, error } = await _supabase.from('STY4AssetRegistry').select('asset_name, location');
     
     if (error) {
         console.error("Error fetching lookups:", error);
@@ -1004,7 +1004,7 @@ async function fetchHierarchyData(isSilent = false) {
 
     // 2. RESTORED SAFE FETCH: Uses select('*') to ensure client-side filters have access to all data
     while (fetchMore && allRecords.length < 10000) {
-        const { data, error } = await _supabase.from('STY2Assets').select('*').range(from, to);
+        const { data, error } = await _supabase.from('STY4Assets').select('*').range(from, to);
         if (error) {
             container.innerHTML = '<p style="text-align:center; color:red;">Error loading log hierarchy.</p>';
             return;
@@ -1436,7 +1436,7 @@ async function deleteSelected() {
 
     // 2. Perform the deletion in the database
     const { error } = await _supabase
-        .from('STY2Assets') 
+        .from('STY4Assets') 
         .delete()
         .in('id', idsToDelete); // Ensure your primary key column is lowercase 'id'
 
@@ -1467,7 +1467,7 @@ async function saveAllChanges() {
         // We use 'location' (lowercase) to match the keys in syncEdit
         // and the previous successful payloads.
         updatePromises.push(
-            _supabase.from('STY2Assets').update(changes).eq('id', Number(id))
+            _supabase.from('STY4Assets').update(changes).eq('id', Number(id))
         );
     }
 
@@ -1615,7 +1615,7 @@ async function loadBrokenSealsForAsset(assetName) {
     const list = document.getElementById('sealCheckboxList');
     
     const { data, error } = await _supabase
-        .from('STY2Assets')
+        .from('STY4Assets')
         .select('id, seal_number, location, sub_area')
         .eq('asset_name', assetName)
         .ilike('status', '%broken%');
@@ -1798,7 +1798,7 @@ async function saveNewEntries() {
             };
         });
 
-        const { error } = await _supabase.from('STY2Assets').insert(newRecords);
+        const { error } = await _supabase.from('STY4Assets').insert(newRecords);
         if (error) throw error;
 
         // Success Cleanup
