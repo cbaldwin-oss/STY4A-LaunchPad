@@ -3939,7 +3939,7 @@ async function admitUser(email, company, requestId) {
         // 1. Add to STY4authorized_editors including the company
         const { error: addError } = await _supabase
             .from('STY4authorized_editors')
-            .insert([{ email: email.toLowerCase(), company: company }]);
+            .insert([{ email: email.toLowerCase(), company: company, has_account: false }]);
         
         if (addError) throw addError;
 
@@ -4171,15 +4171,15 @@ async function handleForgotPin() {
 async function verifyPermission(email) {
     const { data, error } = await _supabase
         .from('STY4authorized_editors')
-        .select('is_admin, company') // Fetch company here
+        .select('is_admin, company, has_account') // Fetch company + account-creation status here
         .eq('email', email.toLowerCase())
         .single();
 
-    if (error || !data) return { isAuthorized: false, isAdmin: false, company: null };
+    if (error || !data) return { isAuthorized: false, isAdmin: false, company: null, hasAccount: false };
     
     // Save it globally for the filter
     window.userCompany = data.company; 
-    return { isAuthorized: true, isAdmin: data.is_admin, company: data.company };
+    return { isAuthorized: true, isAdmin: data.is_admin, company: data.company, hasAccount: !!data.has_account };
 }
 
 async function loadAppConfig() {
@@ -5625,9 +5625,30 @@ async function handleAuthAction() {
             }); // <-- ADDED THE MISSING `});` HERE
 
             if (error) throw error;
+
+            // Record that this user has now created their PIN/account, so a
+            // future failed login is correctly reported as a wrong PIN
+            // instead of "you need to create a PIN".
+            await _supabase
+                .from('STY4authorized_editors')
+                .update({ has_account: true })
+                .eq('email', email);
+
             successEl.innerText = "Success! Check your email to verify your account.";
             successEl.style.display = 'block';
         } else {
+            // Special case: they're on the approved list, but never finished
+            // creating a PIN (never completed Sign Up). A normal login attempt
+            // here would just fail with Supabase's generic "invalid
+            // credentials" error, which would misleadingly read as a wrong
+            // PIN — catch it explicitly instead.
+            if (perm.isAuthorized && !perm.hasAccount) {
+                errorEl.innerText = "You're approved for this project, but haven't created a PIN yet. Please use \"Sign Up\" to create one.";
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                return;
+            }
+
             // Attempt the sign-in itself so we can tell a bad PIN apart from a
             // not-yet-authorized email, and report both if both are true.
             const { error: loginError } = await _supabase.auth.signInWithPassword({ email, password: pin });
@@ -5645,7 +5666,14 @@ async function handleAuthAction() {
                         reasons.push(loginError.message);
                     }
                 }
-                errorEl.innerText = "Sign in failed: " + reasons.join(", and ") + ".";
+                // If a wrong PIN is the ONLY problem (they're authorized and
+                // already have an account), use the exact simple phrasing
+                // instead of the combined "Sign in failed: ..." message.
+                if (perm.isAuthorized && loginError && reasons.length === 1) {
+                    errorEl.innerText = "Incorrect PIN entered.";
+                } else {
+                    errorEl.innerText = "Sign in failed: " + reasons.join(", and ") + ".";
+                }
                 errorEl.style.display = 'block';
                 btn.disabled = false;
                 return;
