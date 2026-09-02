@@ -2,7 +2,7 @@
   "redirects": [
     {
       "source": "/(.*)",
-      "destination": "https://www.launchpad.criticalarccx.com/$1",
+      "destination": "https://www.launchpad.criticalarccx.com",
       "permanent": true
     }
   ]
